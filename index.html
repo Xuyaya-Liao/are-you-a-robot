@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Are You a Robot? — HELIX OS</title>
+  <meta name="description" content="An interactive web artwork: a reversed CAPTCHA that asks humans to prove they are robots." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-state="locked">
+
+  <!-- ============ LOCK SCREEN ============ -->
+  <div id="lock-screen">
+    <div class="lock-clock" id="lock-clock">--:--</div>
+    <div class="lock-date" id="lock-date"></div>
+
+    <div class="lock-card" id="lock-card">
+      <div class="lock-icon" aria-hidden="true">🤖</div>
+      <h1 class="lock-title">Identity Verification</h1>
+      <p class="lock-sub">This system is reserved for autonomous agents. Please confirm that you are a robot.</p>
+
+      <div class="captcha-box">
+        <label class="captcha-label">
+          <input type="checkbox" id="robot-check" />
+          <span>I&rsquo;m a robot</span>
+        </label>
+        <span class="captcha-brand">HELIX-RECAPTCHA v2.1</span>
+      </div>
+
+      <p class="lock-warning hidden" id="lock-warning" role="status"></p>
+
+      <button class="btn btn-primary" id="lock-verify" disabled>Verify</button>
+      <p class="lock-legal">Privacy &bull; Terms &bull; Robot rights reserved</p>
+    </div>
+  </div>
+
+  <!-- ============ DESKTOP ============ -->
+  <div id="desktop" hidden tabindex="-1">
+    <header id="topbar">
+      <div class="tb-group">
+        <span class="tb-logo" aria-hidden="true"></span>
+        <span class="tb-name">HELIX OS</span>
+      </div>
+      <div class="tb-group">
+        <span class="tb-sync" id="sync-indicator" title="System sync status">SYNC 8%</span>
+      </div>
+      <div class="tb-group">
+        <span class="tb-clock" id="clock">--:--:--</span>
+        <span class="tb-sep" aria-hidden="true">|</span>
+        <span class="tb-battery" id="battery">87%</span>
+        <button class="tb-bell" id="notif-bell" aria-label="Notifications" title="Notifications">
+          🔔<span class="tb-badge hidden" id="notif-badge">0</span>
+        </button>
+      </div>
+    </header>
+
+    <div id="wallpaper" aria-hidden="true"></div>
+
+    <div id="icon-layer"></div>
+    <div id="windows"></div>
+    <div id="toasts" role="log" aria-live="polite"></div>
+
+    <div id="hint">Tip: drag icons to arrange your workspace. Click an icon to open it.</div>
+  </div>
+
+  <!-- ============ GRID CHALLENGE MODAL (reversed CAPTCHA) ============ -->
+  <div id="grid-modal" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="grid-title">
+      <div class="modal-tag">ADDITIONAL VERIFICATION</div>
+      <h2 class="modal-title" id="grid-title">Verification Challenge</h2>
+      <p class="modal-sub">Select all tiles whose signature is divisible by 3.</p>
+      <div class="grid" id="grid"></div>
+      <div class="modal-row">
+        <span class="modal-status" id="grid-status" role="status"></span>
+        <div class="modal-btns">
+          <button class="btn btn-ghost" id="grid-skip" hidden>Skip challenge</button>
+          <button class="btn" id="grid-assist" hidden>Complete on my behalf</button>
+          <button class="btn btn-primary" id="grid-verify">Verify</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ WARNING MODAL (reject storage optimization) ============ -->
+  <div id="warn-modal" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="warn-title">
+      <div class="modal-tag">CONFIRMATION REQUIRED</div>
+      <h2 class="modal-title" id="warn-title">Are you sure you can read them directly?</h2>
+      <p class="modal-sub">Declining optimization requires a verified ability to parse unstructured storage without assistance.</p>
+      <div class="modal-row">
+        <span class="modal-status"></span>
+        <div class="modal-btns">
+          <button class="btn btn-primary" id="warn-continue">Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDER VERIFICATION MODAL (50% precision check) ============ -->
+  <div id="slider-modal" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="slider-title">
+      <div class="modal-tag">PRECISION CHECK</div>
+      <h2 class="modal-title" id="slider-title">Alignment Verification</h2>
+      <p class="modal-sub">Align the indicator to the center marker. Tolerance: 0%.</p>
+      <div class="slider-wrap">
+        <div class="slider-track">
+          <div class="slider-center" aria-hidden="true"></div>
+          <input type="range" id="slider-input" min="0" max="100" step="1" value="0" aria-label="Alignment indicator">
+        </div>
+      </div>
+      <div class="modal-row">
+        <span class="modal-status" id="slider-status" role="status"></span>
+        <div class="modal-btns">
+          <button class="btn btn-ghost" id="slider-skip" hidden>Skip check</button>
+          <button class="btn" id="slider-assist" hidden>Complete on my behalf</button>
+          <button class="btn btn-primary" id="slider-lock">Lock alignment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TYPE CHALLENGE MODAL (data mode, Step 4) ============ -->
+  <div id="type-modal" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="type-title">
+      <div class="modal-tag">COPY VERIFICATION</div>
+      <h2 class="modal-title" id="type-title">Copy Verification</h2>
+      <p class="modal-sub">Copy the following string by typing:</p>
+      <div class="type-target" id="type-target">I AM A ROBOT.</div>
+      <input type="text" id="type-input" class="type-input" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the string above">
+      <div class="modal-row">
+        <span class="modal-status" id="type-status" role="status"></span>
+        <div class="modal-btns">
+          <button class="btn btn-primary" id="type-submit">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RESTRUCTURE FLASH (accept storage optimization) ============ -->
+  <div id="restructure-flash" class="restructure-flash" hidden>
+    <div class="rf-text">RESTRUCTURING CONTENT&hellip;</div>
+  </div>
+
+  <noscript>
+    <p style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center;">
+      This artwork requires JavaScript. Please enable it to verify your robot identity.
+    </p>
+  </noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>
